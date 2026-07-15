@@ -2,7 +2,12 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <map>
 using namespace std;
+
+//make a map to store the catalogue of conversions both for building the file and the tree
+map<int, string> catalogOut;
+map<string, int> catalogTree;
 
 class TreeNode {
     public:
@@ -64,7 +69,31 @@ void printTree(TreeNode *root) {
     cout << endl;
 }
 
+void buildFile(TreeNode *root){
+    ofstream htmlOut();
+}
+
 int main() {
+    
+    //populate the catalogs
+    catalogOut[0] = "<h1>";
+    catalogOut[1] = "<h2>";
+    catalogOut[2] = "<h3>";
+    catalogOut[3] = "<h4>";
+    catalogOut[4] = "<h5>";
+    catalogOut[5] = "<h6>";
+    catalogOut[6] = "<p>";
+    catalogOut[7] = "";
+
+    /* I might implement this properly later, im sticking with the function i have right now tho
+    catalogTree["#"] = 0;
+    catalogTree["##"] = 1;
+    catalogTree["###"] = 2;
+    catalogTree["####"] = 3;
+    catalogTree["#####"] = 4;
+    catalogTree["######"] = 5;
+    catalogTree[""] = 6; */
+
     //first we need input from the user - im not bothered to build CLI so just gonna use simple text IO
     cout << "Input the target markdown file \n";
     string input;
@@ -92,4 +121,6 @@ int main() {
 
     //from here we need to make a new file and populate it with html, traversing the tree recurisvely
     //first i want to build a tree printing function for debugging purposes, you best believe im gonna need it
+
+
 }
