@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <algorithm>
 using namespace std;
 
 //make a map to store the catalogue of conversions both for building the file and the tree
@@ -11,8 +12,8 @@ map<string, int> catalogTree;
 
 class TreeNode {
     public:
-        int type; // 0 = h1, 1 = h2, 2 = h3, 3 = h4, 4 = h5, 5 = h6, 6 = p, 7 = text, -1 = root
-        string body;
+        int type; // 0 = h1, 1 = h2, 2 = h3, 3 = h4, 4 = h5, 5 = h6, 6 = p, -1 = root
+        vector<string> body;
         vector<TreeNode*> children;
         TreeNode *parent = nullptr;
         TreeNode(int newtype) {
@@ -28,36 +29,14 @@ int classify(string line, string *body){
     //firstly, im looking for paragraphs and headers. so if i read the first 6 characters of the line, 
     //and count how many #s there are, this will tell me. of course, i need to check if there are 6 characters
     //in the line. if not, i will read the whole line
-    int i = 6;
+    string command;
     if (line.length() < 6) {
-        i = line.length();
-    }
-    
-    int j = 0;
-    for (j; j <= i; j++) {
-        if (line[j] != '#') {
-            break;
-        }
-    }
-
-    switch (j) {
-    case 0:
-        return 6;
-    case 1:
-        return 0;
-    case 2:
-        return 1;
-    case 3:
-        return 2;
-    case 4:
-        return 3;
-    case 5:
-        return 4;
-    case 6:
-        return 5;
-    default:
-        return 7;
-    }
+        command = line;
+    } else {
+        command = line.erase(6, line.length()-6);
+    }    
+    command.erase(remove_if(command.begin(), command.end(), [](char c) { return c != '#'; }), command.end());
+    return catalogTree[command];
 }
 
 void printTree(TreeNode *root) {
@@ -69,12 +48,13 @@ void printTree(TreeNode *root) {
     cout << endl;
 }
 
-void buildFile(TreeNode *root){
-    ofstream htmlOut();
+void buildFile(TreeNode *root, string build){
+    for (TreeNode *child : root->children){
+        buildFile(child, build);
+    }
 }
 
 int main() {
-    
     //populate the catalogs
     catalogOut[0] = "<h1>";
     catalogOut[1] = "<h2>";
@@ -83,16 +63,14 @@ int main() {
     catalogOut[4] = "<h5>";
     catalogOut[5] = "<h6>";
     catalogOut[6] = "<p>";
-    catalogOut[7] = "";
 
-    /* I might implement this properly later, im sticking with the function i have right now tho
     catalogTree["#"] = 0;
     catalogTree["##"] = 1;
     catalogTree["###"] = 2;
     catalogTree["####"] = 3;
     catalogTree["#####"] = 4;
     catalogTree["######"] = 5;
-    catalogTree[""] = 6; */
+    catalogTree[""] = 6;
 
     //first we need input from the user - im not bothered to build CLI so just gonna use simple text IO
     cout << "Input the target markdown file \n";
@@ -122,5 +100,11 @@ int main() {
     //from here we need to make a new file and populate it with html, traversing the tree recurisvely
     //first i want to build a tree printing function for debugging purposes, you best believe im gonna need it
 
+    //remove file if it already exists from a previous run
+    remove("htmlOut.html");
+    ofstream htmlOut("htmlOut.html");
+    if (!htmlOut.is_open()) {
+        cerr << "Something went wrong opening the output file" << endl;
+    }
 
 }
