@@ -13,7 +13,7 @@ map<string, int> catalogTree;
 class TreeNode {
     public:
         int type; // 0 = h1, 1 = h2, 2 = h3, 3 = h4, 4 = h5, 5 = h6, 6 = p, -1 = root
-        vector<string> body;
+        string body;
         vector<TreeNode*> children;
         TreeNode *parent = nullptr;
         TreeNode(int newtype) {
@@ -36,6 +36,11 @@ int classify(string line, string *body){
         command = line.erase(6, line.length()-6);
     }    
     command.erase(remove_if(command.begin(), command.end(), [](char c) { return c != '#'; }), command.end());
+    if (command != "") {
+        size_t pos = line.find(command);
+        line.erase(pos, command.length());
+        *body = line;
+    }
     return catalogTree[command];
 }
 
@@ -94,6 +99,7 @@ int main() {
     while (getline(mdFile, buf)) {
         int newtype = classify(buf, &body);
         TreeNode tmp(newtype);
+        tmp.body = body;
         cursor->addChild(&tmp);
     }
 
@@ -106,5 +112,4 @@ int main() {
     if (!htmlOut.is_open()) {
         cerr << "Something went wrong opening the output file" << endl;
     }
-
 }
