@@ -7,7 +7,8 @@
 using namespace std;
 
 //make a map to store the catalogue of conversions both for building the file and the tree
-map<int, string> catalogOut;
+map<int, string> catalogOut1;
+map<int, string> catalogOut2;
 map<string, int> catalogTree;
 
 class TreeNode {
@@ -53,21 +54,31 @@ void printTree(TreeNode *root) {
     cout << endl;
 }
 
-void buildFile(TreeNode *root, string build){
+void buildFile(TreeNode *root, ofstream &file){
+    file << catalogOut1[root->type] << endl;
     for (TreeNode *child : root->children){
-        buildFile(child, build);
+        buildFile(child, file);
     }
+    file << root->body << "\n" << catalogOut2[root->type] << endl;
 }
 
 int main() {
     //populate the catalogs
-    catalogOut[0] = "<h1>";
-    catalogOut[1] = "<h2>";
-    catalogOut[2] = "<h3>";
-    catalogOut[3] = "<h4>";
-    catalogOut[4] = "<h5>";
-    catalogOut[5] = "<h6>";
-    catalogOut[6] = "<p>";
+    catalogOut1[0] = "<h1>";
+    catalogOut1[1] = "<h2>";
+    catalogOut1[2] = "<h3>";
+    catalogOut1[3] = "<h4>";
+    catalogOut1[4] = "<h5>";
+    catalogOut1[5] = "<h6>";
+    catalogOut1[6] = "<p>";
+
+    catalogOut2[0] = "</h1>";
+    catalogOut2[1] = "</h2>";
+    catalogOut2[2] = "</h3>";
+    catalogOut2[3] = "</h4>";
+    catalogOut2[4] = "</h5>";
+    catalogOut2[5] = "</h6>";
+    catalogOut2[6] = "</p>";
 
     catalogTree["#"] = 0;
     catalogTree["##"] = 1;
@@ -84,7 +95,7 @@ int main() {
 
     ifstream mdFile;
     mdFile.open(input);
-    if (mdFile.is_open()){
+    if (!mdFile.is_open()){
         cerr << "There was an error opening this file. Check if this file exists at this location";
         return 1;
     }
@@ -112,4 +123,5 @@ int main() {
     if (!htmlOut.is_open()) {
         cerr << "Something went wrong opening the output file" << endl;
     }
+    buildFile(&treeRoot, htmlOut);
 }
