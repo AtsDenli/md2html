@@ -31,17 +31,18 @@ int classify(string line, string *body){
     //and count how many #s there are, this will tell me. of course, i need to check if there are 6 characters
     //in the line. if not, i will read the whole line
     string command;
-    if (line.length() < 6) {
+    if (line.length() <= 6) {
         command = line;
     } else {
-        command = line.erase(6, line.length()-6);
+        string linecopy = line;
+        command = linecopy.erase(6, linecopy.length()-6);
     }    
     command.erase(remove_if(command.begin(), command.end(), [](char c) { return c != '#'; }), command.end());
     if (command != "") {
         size_t pos = line.find(command);
         line.erase(pos, command.length());
-        *body = line;
     }
+    *body = line;
     return catalogTree[command];
 }
 
@@ -109,9 +110,9 @@ int main() {
     string body;
     while (getline(mdFile, buf)) {
         int newtype = classify(buf, &body);
-        TreeNode tmp(newtype);
-        tmp.body = body;
-        cursor->addChild(&tmp);
+        TreeNode *tmp = new TreeNode(newtype);
+        tmp->body = body;
+        cursor->addChild(tmp);
     }
 
     //from here we need to make a new file and populate it with html, traversing the tree recurisvely
