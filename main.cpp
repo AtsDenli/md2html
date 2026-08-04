@@ -4,7 +4,6 @@
 #include <vector>
 #include <map>
 #include <algorithm>
-#include <sstream>
 using namespace std;
 
 //make a map to store the catalogue of conversions both for building the file and the tree
@@ -27,16 +26,17 @@ class TreeNode {
         }
 };
 
-vector<string> split_char(const string& s, char delim) {
+vector<string> split_string(const string& s, const string& delim) {
     vector<string> parts;
-    stringstream ss(s);
-    string item;
-    while (getline(ss, item, delim)) {
-        parts.push_back(item);
+    size_t start = 0;
+    size_t pos;
+    while ((pos = s.find(delim, start)) != string::npos) {
+        parts.push_back(s.substr(start, pos - start));
+        start = pos + delim.length();
     }
+    parts.push_back(s.substr(start));
     return parts;
 }
-
 int countSubstr(const string& s, const string& sub) {
     if (sub.empty()) return 0;
     int count = 0;
@@ -83,6 +83,14 @@ int buildNode(string line, TreeNode *node){
         } else { //valid delimiter
             node->body.push_back(bodyPart);
             bodyPart = "";
+            TreeNode *child = new TreeNode(-1);
+            child->parent = node;
+            string delim = to_string(rawBody[i]);
+            if (rawBody[i] == rawBody[i+1]) {
+                delim += to_string(rawBody[i+1]);
+            } 
+            string childBody = split_string(rawBody, delim);
+
         }
     }
 }
