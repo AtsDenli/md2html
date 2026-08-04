@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <sstream>
 using namespace std;
 
 //make a map to store the catalogue of conversions both for building the file and the tree
@@ -26,6 +27,15 @@ class TreeNode {
         }
 };
 
+vector<string> split_char(const string& s, char delim) {
+    vector<string> parts;
+    stringstream ss(s);
+    string item;
+    while (getline(ss, item, delim)) {
+        parts.push_back(item);
+    }
+    return parts;
+}
 
 int countSubstr(const string& s, const string& sub) {
     if (sub.empty()) return 0;
