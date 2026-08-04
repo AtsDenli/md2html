@@ -29,14 +29,23 @@ class TreeNode {
 vector<string> split_string(const string& s, const string& delim) {
     vector<string> parts;
     size_t start = 0;
+    size_t search_from = 0;
     size_t pos;
-    while ((pos = s.find(delim, start)) != string::npos) {
+    bool doubles_up = (delim == "*" || delim == "_");
+    while ((pos = s.find(delim, search_from)) != string::npos) {
+        if (doubles_up && pos + 1 < s.size() && s[pos + 1] == delim[0]) {
+            //"**" or "__" found — the current delim shouldnt split here
+            search_from = pos + 2;
+            continue;
+        }
         parts.push_back(s.substr(start, pos - start));
         start = pos + delim.length();
+        search_from = start;
     }
     parts.push_back(s.substr(start));
     return parts;
 }
+
 int countSubstr(const string& s, const string& sub) {
     if (sub.empty()) return 0;
     int count = 0;
@@ -89,7 +98,7 @@ int buildNode(string line, TreeNode *node){
             if (rawBody[i] == rawBody[i+1]) {
                 delim += to_string(rawBody[i+1]);
             } 
-            string childBody = split_string(rawBody, delim);
+            string childBody = split_string(rawBody, delim)[node->children.size() + node->body.size()];
 
         }
     }
