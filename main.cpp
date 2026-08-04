@@ -14,7 +14,7 @@ map<string, int> catalogTree;
 class TreeNode {
     public:
         int type; // 0 = h1, 1 = h2, 2 = h3, 3 = h4, 4 = h5, 5 = h6, 6 = p, -1 = root
-        string body;
+        vector<string> body;
         vector<TreeNode*> children;
         TreeNode *parent = nullptr;
         TreeNode(int newtype) {
@@ -26,24 +26,55 @@ class TreeNode {
         }
 };
 
-int classify(string line, string *body){
-    //firstly, im looking for paragraphs and headers. so if i read the first 6 characters of the line, 
-    //and count how many #s there are, this will tell me. of course, i need to check if there are 6 characters
-    //in the line. if not, i will read the whole line
-    string command;
-    if (line.length() <= 6) {
-        command = line;
-    } else {
-        string linecopy = line;
-        command = linecopy.erase(6, linecopy.length()-6);
-    }    
-    command.erase(remove_if(command.begin(), command.end(), [](char c) { return c != '#'; }), command.end());
-    if (command != "") {
-        size_t pos = line.find(command);
-        line.erase(pos, command.length());
+
+int countSubstr(const string& s, const string& sub) {
+    if (sub.empty()) return 0;
+    int count = 0;
+    size_t pos = 0;
+    while ((pos = s.find(sub, pos)) != string::npos) {
+        ++count;
+        pos += sub.length(); // move past this match (non-overlapping)
     }
-    *body = line;
-    return catalogTree[command];
+    return count;
+}
+
+int buildNode(string line, TreeNode *node){
+    string command;
+    if (line[0] == '*' || line[0] == '_') {
+        if (line[1] == line[0]) {
+            command = to_string(line[0]) + to_string(line[1]);
+            line.erase(0,2);
+            line.erase(line.length()-2, 2);
+        } else {
+            command = to_string(line[0]);
+            line.erase(0,1);
+            line.erase(line.length()-1, 1);
+        }
+    } else {
+        if (line.length() <= 6) {
+            command = line;
+        } else {
+            string linecopy = line;
+            command = linecopy.erase(6, linecopy.length()-6);
+        }    
+        command.erase(remove_if(command.begin(), command.end(), [](char c) { return c != '#' ; }), command.end());
+        if (command != "") {
+            size_t pos = line.find(command);
+            line.erase(pos, command.length());
+        }
+    }
+    string rawBody = line;
+    node->type = catalogTree[command];
+
+    string bodyPart = "";
+    for (int i = 0; i < rawBody.length(); i++) {
+        if ((rawBody[i] != '*' || rawBody[i] != '_') || ((rawBody[i] == '*'  || rawBody[i] == '_') && rawBody[i+1] == ' ')) {// no valid delimiter
+            bodyPart += rawBody[i];
+        } else { //valid delimiter
+            node->body.push_back(bodyPart);
+            bodyPart = "";
+        }
+    }
 }
 
 void printTree(TreeNode *root) {
@@ -60,7 +91,7 @@ void buildFile(TreeNode *root, ofstream &file){
     for (TreeNode *child : root->children){
         buildFile(child, file);
     }
-    file << root->body << "\n" << catalogOut2[root->type] << endl;
+    file << "\t" << root->body << "\n" << catalogOut2[root->type] << endl;
 }
 
 int main() {
@@ -72,6 +103,8 @@ int main() {
     catalogOut1[4] = "<h5>";
     catalogOut1[5] = "<h6>";
     catalogOut1[6] = "<p>";
+    catalogOut1[7] = "<strong>";
+    catalogOut1[8] = "<em>";
 
     catalogOut2[0] = "</h1>";
     catalogOut2[1] = "</h2>";
@@ -80,6 +113,8 @@ int main() {
     catalogOut2[4] = "</h5>";
     catalogOut2[5] = "</h6>";
     catalogOut2[6] = "</p>";
+    catalogOut2[7] = "</strong>";
+    catalogOut2[8] = "</em>";
 
     catalogTree["#"] = 0;
     catalogTree["##"] = 1;
@@ -88,6 +123,10 @@ int main() {
     catalogTree["#####"] = 4;
     catalogTree["######"] = 5;
     catalogTree[""] = 6;
+    catalogTree["**"] = 7; //bold
+    catalogTree["__"] = 7; //also bold
+    catalogTree["*"] = 8; //italics
+    catalogTree["_"] = 8; //also italics
 
     //first we need input from the user - im not bothered to build CLI so just gonna use simple text IO
     cout << "Input the target markdown file \n";
@@ -101,22 +140,14 @@ int main() {
         return 1;
     }
 
-    //now we need to parse the file and build the tree. I am going to build the node tree here, and then use
-    //a recursive helper function to build the rest - will come later, there will be nothing nested rn
     TreeNode treeRoot(-1);
-    TreeNode *cursor = &treeRoot;
-
     string buf;
     string body;
     while (getline(mdFile, buf)) {
-        int newtype = classify(buf, &body);
-        TreeNode *tmp = new TreeNode(newtype);
-        tmp->body = body;
-        cursor->addChild(tmp);
+        TreeNode *tmp = new TreeNode(-1);
+        tmp -> parent = &treeRoot;
+        buildNode(buf, tmp);
     }
-
-    //from here we need to make a new file and populate it with html, traversing the tree recurisvely
-    //first i want to build a tree printing function for debugging purposes, you best believe im gonna need it
 
     //remove file if it already exists from a previous run
     remove("htmlOut.html");
