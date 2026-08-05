@@ -205,5 +205,4 @@ int main() {
     if (!htmlOut.is_open()) {
         cerr << "Something went wrong opening the output file" << endl;
     }
-    buildFile(&treeRoot, htmlOut);
 }
