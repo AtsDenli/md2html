@@ -98,8 +98,10 @@ int buildNode(string line, TreeNode *node){
             if (rawBody[i] == rawBody[i+1]) {
                 delim += to_string(rawBody[i+1]);
             } 
-            string childBody = split_string(rawBody, delim)[node->children.size() + node->body.size()];
-
+            string childBody = delim + split_string(rawBody, delim)[node->children.size() + node->body.size()] + delim;
+            node->addChild(child);
+            buildNode(childBody, child);
+            i += childBody.length() - 1;
         }
     }
 }
