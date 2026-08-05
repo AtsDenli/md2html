@@ -57,7 +57,7 @@ int countSubstr(const string& s, const string& sub) {
     return count;
 }
 
-int buildNode(string line, TreeNode *node){
+void buildNode(string line, TreeNode *node){
     string command;
     if (line[0] == '*' || line[0] == '_') {
         if (line[1] == line[0]) {
