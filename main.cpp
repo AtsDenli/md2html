@@ -61,11 +61,11 @@ void buildNode(string line, TreeNode *node){
     string command;
     if (line[0] == '*' || line[0] == '_') {
         if (line[1] == line[0]) {
-            command = to_string(line[0]) + to_string(line[1]);
+            command = string(1, line[0]) + string(1, line[1]);
             line.erase(0,2);
             line.erase(line.length()-2, 2);
         } else {
-            command = to_string(line[0]);
+            command = string(1, line[0]);
             line.erase(0,1);
             line.erase(line.length()-1, 1);
         }
@@ -87,23 +87,38 @@ void buildNode(string line, TreeNode *node){
 
     string bodyPart = "";
     for (int i = 0; i < rawBody.length(); i++) {
-        if ((rawBody[i] != '*' || rawBody[i] != '_') || ((rawBody[i] == '*'  || rawBody[i] == '_') && rawBody[i+1] == ' ')) {// no valid delimiter
+        if ((rawBody[i] != '*' && rawBody[i] != '_') || ((rawBody[i] == '*'  || rawBody[i] == '_') && rawBody[i+1] == ' ')) {// no valid delimiter
             bodyPart += rawBody[i];
+            if (i == rawBody.length()-1) {
+                node->body.push_back(bodyPart);
+            }
         } else { //valid delimiter
             node->body.push_back(bodyPart);
             bodyPart = "";
             TreeNode *child = new TreeNode(-1);
             child->parent = node;
-            string delim = to_string(rawBody[i]);
-            if (rawBody[i] == rawBody[i+1]) {
-                delim += to_string(rawBody[i+1]);
+
+            string delim = string(1, rawBody[i]);
+            if (rawBody[i] == rawBody[i+1] && i <= rawBody.length()) {
+                delim += string(1, rawBody[i+1]);
             } 
-            string childBody = delim + split_string(rawBody, delim)[node->children.size() + node->body.size()] + delim;
+
+            size_t start = i + delim.length();
+            size_t end = rawBody.find(delim, start);
+
+            string childBody;
+            if (end != string::npos){
+                childBody = delim + rawBody.substr(start, end - start) + delim;
+            } else {
+                childBody = delim;
+            }
+
             node->addChild(child);
             buildNode(childBody, child);
             i += childBody.length() - 1;
         }
     }
+
 }
 
 void printTree(TreeNode *root) {
@@ -181,6 +196,7 @@ int main() {
         TreeNode *tmp = new TreeNode(-1);
         tmp -> parent = &treeRoot;
         buildNode(buf, tmp);
+        treeRoot.addChild(tmp);
     }
 
     //remove file if it already exists from a previous run
