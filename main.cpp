@@ -205,4 +205,9 @@ int main() {
     if (!htmlOut.is_open()) {
         cerr << "Something went wrong opening the output file" << endl;
     }
+
+    for (TreeNode *child : treeRoot.children) {
+        buildFile(child, htmlOut);
+    }
+
 }
