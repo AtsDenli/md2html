@@ -116,11 +116,16 @@ void printTree(TreeNode *root) {
 }
 
 void buildFile(TreeNode *root, ofstream &file){
-    file << catalogOut1[root->type] << endl;
-    for (TreeNode *child : root->children){
-        buildFile(child, file);
+    file << catalogOut1[root->type] << endl << "\t";
+    int i = 0;
+    for (string bodyPart : root->body){
+        file << bodyPart;
+        if (i < root->children.size()) {
+            buildFile(root->children[i], file);
+        }
+        i++;
     }
-    file << "\t" << root->body << "\n" << catalogOut2[root->type] << endl;
+    file << catalogOut2[root->type] << endl;
 }
 
 int main() {
