@@ -46,17 +46,6 @@ vector<string> split_string(const string& s, const string& delim) {
     return parts;
 }
 
-int countSubstr(const string& s, const string& sub) {
-    if (sub.empty()) return 0;
-    int count = 0;
-    size_t pos = 0;
-    while ((pos = s.find(sub, pos)) != string::npos) {
-        ++count;
-        pos += sub.length(); // move past this match (non-overlapping)
-    }
-    return count;
-}
-
 void buildNode(string line, TreeNode *node){
     string command;
     if (line[0] == '*' || line[0] == '_') {
@@ -87,38 +76,45 @@ void buildNode(string line, TreeNode *node){
 
     string bodyPart = "";
     for (int i = 0; i < rawBody.length(); i++) {
-        if ((rawBody[i] != '*' && rawBody[i] != '_') || ((rawBody[i] == '*'  || rawBody[i] == '_') && rawBody[i+1] == ' ')) {// no valid delimiter
-            bodyPart += rawBody[i];
-            if (i == rawBody.length()-1) {
-                node->body.push_back(bodyPart);
-            }
-        } else { //valid delimiter
-            node->body.push_back(bodyPart);
-            bodyPart = "";
-            TreeNode *child = new TreeNode(-1);
-            child->parent = node;
-
+        bool isDoubled = ((rawBody[i] == '*'  || rawBody[i] == '_') && rawBody[i+1] == rawBody[i]);
+        if (((rawBody[i] == '*'  || rawBody[i] == '_') && rawBody[i+1] != ' ' && !isDoubled) || (isDoubled && rawBody[i+2] != ' ')) { //valid delimiter
             string delim = string(1, rawBody[i]);
             if (rawBody[i] == rawBody[i+1] && i <= rawBody.length()) {
                 delim += string(1, rawBody[i+1]);
             } 
 
-            size_t start = i + delim.length();
-            size_t end = rawBody.find(delim, start);
+            if (rawBody.find(delim, i+1) != string::npos){ //making sure this isnt the last delimiter in the line without a pair - edge case
+                node->body.push_back(bodyPart);
+                bodyPart = "";
+                TreeNode *child = new TreeNode(-1);
+                child->parent = node;
 
-            string childBody;
-            if (end != string::npos){
-                childBody = delim + rawBody.substr(start, end - start) + delim;
+                size_t start = i + delim.length();
+                size_t end = rawBody.find(delim, start);
+
+                string childBody;
+                if (end != string::npos){
+                    childBody = delim + rawBody.substr(start, end - start) + delim;
+                } else {
+                    childBody = delim;
+                }
+
+                node->addChild(child);
+                buildNode(childBody, child);
+                i += childBody.length() - 1;
             } else {
-                childBody = delim;
+                bodyPart += rawBody[i];
+                if (i == rawBody.length()-1) {
+                node->body.push_back(bodyPart);
+                }
             }
-
-            node->addChild(child);
-            buildNode(childBody, child);
-            i += childBody.length() - 1;
+        } else {
+            bodyPart += rawBody[i];
+            if (i == rawBody.length()-1) {
+                node->body.push_back(bodyPart);
+            }
         }
     }
-
 }
 
 void printTree(TreeNode *root) {
@@ -134,7 +130,7 @@ void buildFile(TreeNode *root, ofstream &file){
     file << catalogOut1[root->type] << endl << "\t";
     int i = 0;
     for (string bodyPart : root->body){
-        file << bodyPart;
+        file << bodyPart << endl;
         if (i < root->children.size()) {
             buildFile(root->children[i], file);
         }
@@ -209,5 +205,4 @@ int main() {
     for (TreeNode *child : treeRoot.children) {
         buildFile(child, htmlOut);
     }
-
 }

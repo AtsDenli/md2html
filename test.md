@@ -4,6 +4,7 @@
 paragraph test
 this **is** _inline_ test
 this ** shouldnt be bold**
+this * shouldn't be italics*
 this **_is both_**
 this s**hould work**
 this s__houldn't work__
