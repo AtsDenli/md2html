@@ -46,6 +46,27 @@ vector<string> split_string(const string& s, const string& delim) {
     return parts;
 }
 
+string escHTML(string line) {
+    string escapedLine = "";
+    char toReplace[] = {'&', '<', '>'};
+    string replaceWith[] = {"&amp;", "&lt;", "&gt;"};
+    for (int i = 0; i < line.length(); i++) {
+        bool isHTML = false;
+        for (int j = 0; j < 3; j++) {
+            if (toReplace[j] == line[i]) {
+                isHTML = true;
+                escapedLine += replaceWith[j];
+                break;
+            }
+        }
+        if (!isHTML) {
+            escapedLine += line[i];
+        }
+    }
+    return escapedLine;
+}
+
+
 void buildNode(string line, TreeNode *node){
     string command;
     if (line == "****") {
@@ -74,7 +95,7 @@ void buildNode(string line, TreeNode *node){
             line.erase(pos, command.length());
         }
     }
-    string rawBody = line;
+    string rawBody = escHTML(line);
     node->type = catalogTree[command];
 
     string bodyPart = "";
@@ -154,6 +175,7 @@ int main() {
     catalogOut1[7] = "<strong>";
     catalogOut1[8] = "<em>";
     catalogOut1[9] = "<hr>";
+    catalogOut1[10] = "<code>";
 
     catalogOut2[0] = "</h1>";
     catalogOut2[1] = "</h2>";
@@ -165,6 +187,7 @@ int main() {
     catalogOut2[7] = "</strong>";
     catalogOut2[8] = "</em>";
     catalogOut2[9] = "";
+    catalogOut2[10] = "</code>";
 
     catalogTree["#"] = 0;
     catalogTree["##"] = 1;
@@ -178,6 +201,7 @@ int main() {
     catalogTree["*"] = 8; //italics
     catalogTree["_"] = 8; //also italics
     catalogTree["****"] = 9; //horizontal rule
+    catalogTree["`"] = 10; //inline code
 
     //first we need input from the user - im not bothered to build CLI so just gonna use simple text IO
     cout << "Input the target markdown file \n";
