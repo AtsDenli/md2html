@@ -2,6 +2,7 @@
 ##test2
 ###test3
 paragraph test
+****
 this **is** _inline_ test
 this ** shouldnt be bold**
 this * shouldn't be italics*

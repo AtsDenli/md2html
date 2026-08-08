@@ -48,7 +48,10 @@ vector<string> split_string(const string& s, const string& delim) {
 
 void buildNode(string line, TreeNode *node){
     string command;
-    if (line[0] == '*' || line[0] == '_') {
+    if (line == "****") {
+        command = line;
+        line = "";
+    } else if (line[0] == '*' || line[0] == '_') {
         if (line[1] == line[0]) {
             command = string(1, line[0]) + string(1, line[1]);
             line.erase(0,2);
@@ -150,6 +153,7 @@ int main() {
     catalogOut1[6] = "<p>";
     catalogOut1[7] = "<strong>";
     catalogOut1[8] = "<em>";
+    catalogOut1[9] = "<hr>";
 
     catalogOut2[0] = "</h1>";
     catalogOut2[1] = "</h2>";
@@ -160,6 +164,7 @@ int main() {
     catalogOut2[6] = "</p>";
     catalogOut2[7] = "</strong>";
     catalogOut2[8] = "</em>";
+    catalogOut2[9] = "";
 
     catalogTree["#"] = 0;
     catalogTree["##"] = 1;
@@ -172,6 +177,7 @@ int main() {
     catalogTree["__"] = 7; //also bold
     catalogTree["*"] = 8; //italics
     catalogTree["_"] = 8; //also italics
+    catalogTree["****"] = 9; //horizontal rule
 
     //first we need input from the user - im not bothered to build CLI so just gonna use simple text IO
     cout << "Input the target markdown file \n";
