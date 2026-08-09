@@ -68,10 +68,24 @@ string escHTML(string line) {
 
 
 void buildNode(string line, TreeNode *node){
+    bool inlinesSuppressed = false;
     string command;
     if (line == "****") {
         command = line;
         line = "";
+    } else if (line[0] == '`') {
+        command = "`";
+        inlinesSuppressed = true;
+        int backTickCount = 1;
+        for (int n = 1; n < line.length(); n++) {
+            if (line[n-1] == line[n] == '`') {
+                backTickCount++;
+            } else {
+                break;
+            }
+        }
+        line.erase(0, backTickCount);
+        line.erase(line.length()-backTickCount, backTickCount);
     } else if (line[0] == '*' || line[0] == '_') {
         if (line[1] == line[0]) {
             command = string(1, line[0]) + string(1, line[1]);
@@ -97,6 +111,12 @@ void buildNode(string line, TreeNode *node){
     }
     string rawBody = escHTML(line);
     node->type = catalogTree[command];
+
+    if (inlinesSuppressed) {
+        //if this is an inline code, inlines are supressed and not formatted.
+        node->body.push_back(rawBody);
+        return;
+    }
 
     string bodyPart = "";
     for (int i = 0; i < rawBody.length(); i++) {
