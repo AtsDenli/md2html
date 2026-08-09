@@ -74,18 +74,35 @@ void buildNode(string line, TreeNode *node){
         command = line;
         line = "";
     } else if (line[0] == '`') {
-        command = "`";
         inlinesSuppressed = true;
-        int backTickCount = 1;
-        for (int n = 1; n < line.length(); n++) {
-            if (line[n-1] == line[n] == '`') {
+        int backTickCount = 0;
+        for (int n = 0; n < line.length(); n++) {
+            if (line[n] == '`') {
                 backTickCount++;
             } else {
                 break;
             }
         }
-        line.erase(0, backTickCount);
-        line.erase(line.length()-backTickCount, backTickCount);
+        int backTickCheck = 0;
+        if (line[line.length()-1] == '`'){
+            for (int m = line.length()-1; m >=0; m--) {
+                if (line[m] == '`') {
+                    backTickCheck++;
+                } else {
+                    break;
+                }
+            }
+        } 
+
+        if (backTickCheck == backTickCount) {
+            command = '`';
+            line.erase(0, backTickCount);
+            line.erase(line.length()-backTickCount, backTickCount);
+        } else {
+            //not the same number of bacticks before and after - its a paragraph instead
+            command = "";
+        }
+        
     } else if (line[0] == '*' || line[0] == '_') {
         if (line[1] == line[0]) {
             command = string(1, line[0]) + string(1, line[1]);
@@ -114,6 +131,11 @@ void buildNode(string line, TreeNode *node){
 
     if (inlinesSuppressed) {
         //if this is an inline code, inlines are supressed and not formatted.
+        //first lets remove any leading/trailing spaces
+        if (rawBody[0] == ' ' && rawBody[rawBody.length()-1] == ' '){
+            rawBody.erase(0,1);
+            rawBody.erase(rawBody.length()-1,1);
+        }
         node->body.push_back(rawBody);
         return;
     }
