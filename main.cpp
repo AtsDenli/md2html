@@ -66,13 +66,47 @@ string escHTML(string line) {
     return escapedLine;
 }
 
+bool parseLink(string line, TreeNode *node) {
+    //at this point, all we know is that the line starts with a [, need to actually check its a link first
+    bool noWhitespace = false;
+    string linkText = "";
+    int i = 1;
+    for (i; i < line.length(); i++) {
+        if (line[i] == ']' && line[i+1] == '(') {
+            noWhitespace = true;
+            break;
+        }
+        linkText += line[i];
+    }
+    if (!(noWhitespace && line[line.length()-1] == ')')) {
+        //not a valid link
+        return false;
+    }
+    //create node to add to tree
+    TreeNode *child = new TreeNode(11);
+    child->parent = node;
 
-void buildNode(string line, TreeNode *node){
+    //parse the link text
+    buildNode(linkText, child, false);
+    string destiTitle = split_string(line, "(")[1];
+    destiTitle.erase(destiTitle.length()-1, 1);
+
+    vector<string> splits = split_string(destiTitle, "\"");
+    node->body.push_back(splits[0]);
+    node->body.push_back(splits[1]);
+    
+}
+
+void buildNode(string line, TreeNode *node, bool linkAllow){
     bool inlinesSuppressed = false;
+    bool isLink = false;
     string command;
     if (line == "****") {
         command = line;
         line = "";
+    } else if (line[0] == '[' && linkAllow) {
+        //make a new function to identify and parse links
+        isLink = parseLink(line, node);
     } else if (line[0] == '`') {
         inlinesSuppressed = true;
         int backTickCount = 0;
@@ -166,7 +200,7 @@ void buildNode(string line, TreeNode *node){
                 }
 
                 node->addChild(child);
-                buildNode(childBody, child);
+                buildNode(childBody, child, true);
                 i += childBody.length() - 1;
             } else {
                 bodyPart += rawBody[i];
@@ -218,6 +252,7 @@ int main() {
     catalogOut1[8] = "<em>";
     catalogOut1[9] = "<hr>";
     catalogOut1[10] = "<code>";
+    catalogOut1[11] = "<a>";
 
     catalogOut2[0] = "</h1>";
     catalogOut2[1] = "</h2>";
@@ -230,6 +265,7 @@ int main() {
     catalogOut2[8] = "</em>";
     catalogOut2[9] = "";
     catalogOut2[10] = "</code>";
+    catalogOut2[11] = "</a>";
 
     catalogTree["#"] = 0;
     catalogTree["##"] = 1;
@@ -263,7 +299,7 @@ int main() {
     while (getline(mdFile, buf)) {
         TreeNode *tmp = new TreeNode(-1);
         tmp -> parent = &treeRoot;
-        buildNode(buf, tmp);
+        buildNode(buf, tmp, true);
         treeRoot.addChild(tmp);
     }
 
