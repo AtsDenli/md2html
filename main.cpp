@@ -26,6 +26,8 @@ class TreeNode {
         }
 };
 
+void buildNode(string line, TreeNode* node, bool linkAllow);
+
 vector<string> split_string(const string& s, const string& delim) {
     vector<string> parts;
     size_t start = 0;
@@ -93,11 +95,18 @@ bool parseLink(string line, TreeNode *node) {
 
     vector<string> splits = split_string(destiTitle, "\"");
     node->body.push_back(splits[0]);
-    node->body.push_back(splits[1]);
+    if (node->body.size() > 1) {
+        node->body.push_back(splits[1]);
+    }
+    return true;
     
 }
 
 void buildNode(string line, TreeNode *node, bool linkAllow){
+    if (line.empty()) {
+        node->type = catalogTree[""];
+        return;
+    }
     bool inlinesSuppressed = false;
     bool isLink = false;
     string command;
@@ -227,16 +236,27 @@ void printTree(TreeNode *root) {
 }
 
 void buildFile(TreeNode *root, ofstream &file){
-    file << catalogOut1[root->type] << endl << "\t";
-    int i = 0;
-    for (string bodyPart : root->body){
-        file << bodyPart << endl;
-        if (i < root->children.size()) {
-            buildFile(root->children[i], file);
+    if (root->type != 11) {
+        file << catalogOut1[root->type] << endl << "\t";
+        int i = 0;
+        for (string bodyPart : root->body){
+            file << bodyPart << endl;
+            if (i < root->children.size()) {
+                buildFile(root->children[i], file);
+            }
+            i++;
         }
-        i++;
+        file << catalogOut2[root->type] << endl;
+    } else {
+        file << catalogOut1[root->type][0] << catalogOut1[root->type][1] << "href=\"" << root->body[0] << "\" ";
+        if (root->body.size() > 1) {
+            file << "title=\"" << root->body[1] << "\"";
+        }
+        file << ">" << endl << "\t";
+        buildFile(root->children[0], file);
+        file << catalogOut2[root->type] << endl;
     }
-    file << catalogOut2[root->type] << endl;
+    
 }
 
 int main() {

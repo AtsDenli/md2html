@@ -13,3 +13,4 @@ this s__houldn't work__
 ```this should also work```
 ```this should NOT work``
 `` this **shouldnt** be bold ``
+[War Front Video](https://www.youtube.com/watch?v=fQ30xhabzFU "video title")
