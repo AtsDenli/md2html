@@ -90,12 +90,13 @@ bool parseLink(string line, TreeNode *node) {
 
     //parse the link text
     buildNode(linkText, child, false);
+    node->addChild(child);
     string destiTitle = split_string(line, "(")[1];
     destiTitle.erase(destiTitle.length()-1, 1);
 
     vector<string> splits = split_string(destiTitle, "\"");
     node->body.push_back(splits[0]);
-    if (node->body.size() > 1) {
+    if (splits.size() > 1) {
         node->body.push_back(splits[1]);
     }
     return true;
@@ -115,6 +116,7 @@ void buildNode(string line, TreeNode *node, bool linkAllow){
         line = "";
     } else if (line[0] == '[' && linkAllow) {
         //make a new function to identify and parse links
+        node->type = 11;
         isLink = parseLink(line, node);
     } else if (line[0] == '`') {
         inlinesSuppressed = true;
@@ -169,58 +171,60 @@ void buildNode(string line, TreeNode *node, bool linkAllow){
             line.erase(pos, command.length());
         }
     }
-    string rawBody = escHTML(line);
-    node->type = catalogTree[command];
+    if (!isLink) {
+        string rawBody = escHTML(line);
+        node->type = catalogTree[command];
 
-    if (inlinesSuppressed) {
-        //if this is an inline code, inlines are supressed and not formatted.
-        //first lets remove any leading/trailing spaces
-        if (rawBody[0] == ' ' && rawBody[rawBody.length()-1] == ' '){
-            rawBody.erase(0,1);
-            rawBody.erase(rawBody.length()-1,1);
+        if (inlinesSuppressed) {
+            //if this is an inline code, inlines are supressed and not formatted.
+            //first lets remove any leading/trailing spaces
+            if (rawBody[0] == ' ' && rawBody[rawBody.length()-1] == ' '){
+                rawBody.erase(0,1);
+                rawBody.erase(rawBody.length()-1,1);
+            }
+            node->body.push_back(rawBody);
+            return;
         }
-        node->body.push_back(rawBody);
-        return;
-    }
 
-    string bodyPart = "";
-    for (int i = 0; i < rawBody.length(); i++) {
-        bool isDoubled = ((rawBody[i] == '*'  || rawBody[i] == '_') && rawBody[i+1] == rawBody[i]);
-        if (((rawBody[i] == '*'  || rawBody[i] == '_') && rawBody[i+1] != ' ' && !isDoubled) || (isDoubled && rawBody[i+2] != ' ')) { //valid delimiter
-            string delim = string(1, rawBody[i]);
-            if (rawBody[i] == rawBody[i+1] && i <= rawBody.length()) {
-                delim += string(1, rawBody[i+1]);
-            } 
+        string bodyPart = "";
+        for (int i = 0; i < rawBody.length(); i++) {
+            bool isDoubled = ((rawBody[i] == '*'  || rawBody[i] == '_') && rawBody[i+1] == rawBody[i]);
+            if (((rawBody[i] == '*'  || rawBody[i] == '_') && rawBody[i+1] != ' ' && !isDoubled) || (isDoubled && rawBody[i+2] != ' ')) { //valid delimiter
+                string delim = string(1, rawBody[i]);
+                if (rawBody[i] == rawBody[i+1] && i <= rawBody.length()) {
+                    delim += string(1, rawBody[i+1]);
+                } 
 
-            if (rawBody.find(delim, i+1) != string::npos){ //making sure this isnt the last delimiter in the line without a pair - edge case
-                node->body.push_back(bodyPart);
-                bodyPart = "";
-                TreeNode *child = new TreeNode(-1);
-                child->parent = node;
+                if (rawBody.find(delim, i+1) != string::npos){ //making sure this isnt the last delimiter in the line without a pair - edge case
+                    node->body.push_back(bodyPart);
+                    bodyPart = "";
+                    TreeNode *child = new TreeNode(-1);
+                    child->parent = node;
 
-                size_t start = i + delim.length();
-                size_t end = rawBody.find(delim, start);
+                    size_t start = i + delim.length();
+                    size_t end = rawBody.find(delim, start);
 
-                string childBody;
-                if (end != string::npos){
-                    childBody = delim + rawBody.substr(start, end - start) + delim;
+                    string childBody;
+                    if (end != string::npos){
+                        childBody = delim + rawBody.substr(start, end - start) + delim;
+                    } else {
+                        childBody = delim;
+                    }
+
+                    node->addChild(child);
+                    buildNode(childBody, child, true);
+                    i += childBody.length() - 1;
                 } else {
-                    childBody = delim;
+                    bodyPart += rawBody[i];
+                    if (i == rawBody.length()-1) {
+                    node->body.push_back(bodyPart);
+                    }
                 }
-
-                node->addChild(child);
-                buildNode(childBody, child, true);
-                i += childBody.length() - 1;
             } else {
                 bodyPart += rawBody[i];
                 if (i == rawBody.length()-1) {
-                node->body.push_back(bodyPart);
+                    node->body.push_back(bodyPart);
                 }
-            }
-        } else {
-            bodyPart += rawBody[i];
-            if (i == rawBody.length()-1) {
-                node->body.push_back(bodyPart);
             }
         }
     }
@@ -248,7 +252,7 @@ void buildFile(TreeNode *root, ofstream &file){
         }
         file << catalogOut2[root->type] << endl;
     } else {
-        file << catalogOut1[root->type][0] << catalogOut1[root->type][1] << "href=\"" << root->body[0] << "\" ";
+        file << catalogOut1[root->type][0] << catalogOut1[root->type][1] << " href=\"" << root->body[0] << "\" ";
         if (root->body.size() > 1) {
             file << "title=\"" << root->body[1] << "\"";
         }
