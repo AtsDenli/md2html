@@ -68,15 +68,23 @@ string escHTML(string line) {
     return escapedLine;
 }
 
-bool parseLink(string line, TreeNode *node) {
+bool parseLinkImg(string line, TreeNode *node) {
     //at this point, all we know is that the line starts with a [, need to actually check its a link first
     bool noWhitespace = false;
     string linkText = "";
-    int i = 1;
+    int i;
+    if (line[0] == '!') {
+        i = 2;
+    } else {
+        i = 1;
+    }
+
     for (i; i < line.length(); i++) {
-        if (line[i] == ']' && line[i+1] == '(') {
-            noWhitespace = true;
-            break;
+        if (i != line.length()-1) {
+            if (line[i] == ']' && line[i+1] == '(') {
+                noWhitespace = true;
+                break;
+            }
         }
         linkText += line[i];
     }
@@ -109,7 +117,7 @@ void buildNode(string line, TreeNode *node, bool linkAllow){
         return;
     }
     bool inlinesSuppressed = false;
-    bool isLink = false;
+    bool isLinkImg = false;
     string command;
     if (line == "****") {
         command = line;
@@ -117,7 +125,10 @@ void buildNode(string line, TreeNode *node, bool linkAllow){
     } else if (line[0] == '[' && linkAllow) {
         //make a new function to identify and parse links
         node->type = 11;
-        isLink = parseLink(line, node);
+        isLinkImg = parseLinkImg(line, node);
+    } else if (line[0] == '!' && line[1] == '[' && linkAllow) {
+        node->type = 12;
+        isLinkImg = parseLinkImg(line, node);
     } else if (line[0] == '`') {
         inlinesSuppressed = true;
         int backTickCount = 0;
@@ -171,7 +182,7 @@ void buildNode(string line, TreeNode *node, bool linkAllow){
             line.erase(pos, command.length());
         }
     }
-    if (!isLink) {
+    if (!isLinkImg) {
         string rawBody = escHTML(line);
         node->type = catalogTree[command];
 
@@ -240,7 +251,23 @@ void printTree(TreeNode *root) {
 }
 
 void buildFile(TreeNode *root, ofstream &file){
-    if (root->type != 11) {
+    if (root->type == 11) {
+        file << catalogOut1[root->type][0] << catalogOut1[root->type][1] << "  href=\"" << root->body[0] << "\" ";
+        if (root->body.size() > 1) {
+            file << "title=\"" << root->body[1] << "\"";
+        }
+        file << ">" << endl << "\t";
+        buildFile(root->children[0], file);
+        file << catalogOut2[root->type] << endl;
+    } else if (root->type == 12) {
+        file << catalogOut1[root->type] << " src=\"" << root->body[0] << "\" alt=\"";
+        buildFile(root->children[0], file);
+        file << "\"";
+        if (root->body.size() > 1) {
+            file << " title=\"" << root->body[1] << "\"";
+        }
+        file << catalogOut2[root->type];
+    } else {
         file << catalogOut1[root->type] << endl << "\t";
         int i = 0;
         for (string bodyPart : root->body){
@@ -250,14 +277,6 @@ void buildFile(TreeNode *root, ofstream &file){
             }
             i++;
         }
-        file << catalogOut2[root->type] << endl;
-    } else {
-        file << catalogOut1[root->type][0] << catalogOut1[root->type][1] << " href=\"" << root->body[0] << "\" ";
-        if (root->body.size() > 1) {
-            file << "title=\"" << root->body[1] << "\"";
-        }
-        file << ">" << endl << "\t";
-        buildFile(root->children[0], file);
         file << catalogOut2[root->type] << endl;
     }
     
@@ -277,6 +296,7 @@ int main() {
     catalogOut1[9] = "<hr>";
     catalogOut1[10] = "<code>";
     catalogOut1[11] = "<a>";
+    catalogOut1[12] = "<img ";
 
     catalogOut2[0] = "</h1>";
     catalogOut2[1] = "</h2>";
@@ -290,6 +310,7 @@ int main() {
     catalogOut2[9] = "";
     catalogOut2[10] = "</code>";
     catalogOut2[11] = "</a>";
+    catalogOut2[12] = "/>";
 
     catalogTree["#"] = 0;
     catalogTree["##"] = 1;
