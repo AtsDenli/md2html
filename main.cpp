@@ -250,36 +250,39 @@ void printTree(TreeNode *root) {
     cout << endl;
 }
 
-void buildFile(TreeNode *root, ofstream &file){
+void buildFile(TreeNode *root, ofstream &file, bool isLinkImg){
     if (root->type == 11) {
         file << catalogOut1[root->type][0] << catalogOut1[root->type][1] << "  href=\"" << root->body[0] << "\" ";
         if (root->body.size() > 1) {
             file << "title=\"" << root->body[1] << "\"";
         }
         file << ">" << endl << "\t";
-        buildFile(root->children[0], file);
+        buildFile(root->children[0], file, true);
         file << catalogOut2[root->type] << endl;
     } else if (root->type == 12) {
         file << catalogOut1[root->type] << " src=\"" << root->body[0] << "\" alt=\"";
-        buildFile(root->children[0], file);
+        buildFile(root->children[0], file, true);
         file << "\"";
         if (root->body.size() > 1) {
             file << " title=\"" << root->body[1] << "\"";
         }
         file << catalogOut2[root->type];
     } else {
-        file << catalogOut1[root->type] << endl << "\t";
+        if (!isLinkImg) {
+            file << catalogOut1[root->type] << endl << "\t";
+        }
         int i = 0;
         for (string bodyPart : root->body){
             file << bodyPart << endl;
             if (i < root->children.size()) {
-                buildFile(root->children[i], file);
+                buildFile(root->children[i], file, false);
             }
             i++;
         }
-        file << catalogOut2[root->type] << endl;
+        if (!isLinkImg) {
+            file << catalogOut2[root->type] << endl;
+        }
     }
-    
 }
 
 int main() {
@@ -356,6 +359,6 @@ int main() {
     }
 
     for (TreeNode *child : treeRoot.children) {
-        buildFile(child, htmlOut);
+        buildFile(child, htmlOut, false);
     }
 }
