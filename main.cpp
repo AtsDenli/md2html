@@ -97,7 +97,7 @@ bool parseLinkImg(string line, TreeNode *node) {
     child->parent = node;
 
     //parse the link text
-    buildNode(linkText, child, false);
+    buildNode(linkText, child, false, nullptr);
     node->addChild(child);
     string destiTitle = split_string(line, "(")[1];
     destiTitle.erase(destiTitle.length()-1, 1);
@@ -111,7 +111,7 @@ bool parseLinkImg(string line, TreeNode *node) {
     
 }
 
-void buildNode(string line, TreeNode *node, bool linkAllow){
+void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
     if (line.empty()) {
         node->type = catalogTree[""];
         return;
@@ -182,7 +182,35 @@ void buildNode(string line, TreeNode *node, bool linkAllow){
             line.erase(pos, command.length());
         }
     }
+
     if (!isLinkImg) {
+        if (command == "" && (count(line.begin(), line.begin()+3, "`") == 3) || (count(line.begin(), line.begin()+3, "~") == 3)) {
+            char delimChar = line[0];
+            string delim = "";
+            for (int i = 0; i < line.length(); i++) {
+                if (line[i] != delimChar) {
+                    break;
+                }
+                delim += line[i];
+            }
+            line.erase(0,delim.length());
+            size_t pos = 0;
+            while (true) {
+                pos = line.find(delim);
+                if (pos != string::npos || mdFile->eof()) {
+                    break;
+                } else {
+                    string newLine;
+                    getline(*mdFile, newLine);
+                    line += "\n";
+                    line += newLine;
+                }
+            }
+            node->type = 13;
+            node->body.push_back(line);
+            inlinesSuppressed = true;
+        }
+
         string rawBody = escHTML(line);
         node->type = catalogTree[command];
 
@@ -223,7 +251,7 @@ void buildNode(string line, TreeNode *node, bool linkAllow){
                     }
 
                     node->addChild(child);
-                    buildNode(childBody, child, true);
+                    buildNode(childBody, child, true, mdFile);
                     i += childBody.length() - 1;
                 } else {
                     bodyPart += rawBody[i];
@@ -347,7 +375,7 @@ int main() {
     while (getline(mdFile, buf)) {
         TreeNode *tmp = new TreeNode(-1);
         tmp -> parent = &treeRoot;
-        buildNode(buf, tmp, true);
+        buildNode(buf, tmp, true, &mdFile);
         treeRoot.addChild(tmp);
     }
 
