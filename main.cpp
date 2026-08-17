@@ -26,7 +26,7 @@ class TreeNode {
         }
 };
 
-void buildNode(string line, TreeNode* node, bool linkAllow);
+void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile = nullptr);
 
 vector<string> split_string(const string& s, const string& delim) {
     vector<string> parts;
