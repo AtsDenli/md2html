@@ -8,7 +8,7 @@ this ** shouldnt be bold**
 this * shouldn't be italics*
 this **_is both_**
 this s**hould work**
-this s__houldn't work__
+this s__houldn't be bold__
 `this should work`
 ```this should also work```
 `` this **shouldnt** be bold ``

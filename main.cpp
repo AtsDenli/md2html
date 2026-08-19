@@ -93,7 +93,7 @@ bool parseLinkImg(string line, TreeNode *node) {
         return false;
     }
     //create node to add to tree
-    TreeNode *child = new TreeNode(11);
+    TreeNode *child = new TreeNode(-1);
     child->parent = node;
 
     //parse the link text
@@ -219,6 +219,7 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
                 mdFile->clear(); 
                 mdFile->seekg(orgPos);
             } else {
+                multiLine.erase(multiLine.end() - delim.length(), multiLine.end());
                 node->body.push_back(multiLine);
             }
             inlinesSuppressed = true;
@@ -311,7 +312,7 @@ void buildFile(TreeNode *root, ofstream &file, bool isLinkImg){
         if (root->body.size() > 1) {
             file << " title=\"" << root->body[1] << "\"";
         }
-        file << catalogOut2[root->type];
+        file << catalogOut2[root->type] << endl;
     } else {
         if (!isLinkImg) {
             file << catalogOut1[root->type] << endl << "\t";
