@@ -26,7 +26,7 @@ class TreeNode {
         }
 };
 
-void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile = nullptr);
+void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile);
 
 vector<string> split_string(const string& s, const string& delim) {
     vector<string> parts;
@@ -157,6 +157,7 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
         } else {
             //not the same number of bacticks before and after - its a paragraph instead
             command = "";
+            inlinesSuppressed = false;
         }
         
     } else if (line[0] == '*' || line[0] == '_') {
@@ -184,37 +185,53 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
     }
 
     if (!isLinkImg) {
-        if (command == "" && (count(line.begin(), line.begin()+3, "`") == 3) || (count(line.begin(), line.begin()+3, "~") == 3)) {
+        if (command == "" && !inlinesSuppressed && (count(line.begin(), line.begin()+3, '`') == 3) || (count(line.begin(), line.begin()+3, '~') == 3)) {
             char delimChar = line[0];
             string delim = "";
             for (int i = 0; i < line.length(); i++) {
-                if (line[i] != delimChar) {
+                if (line[i] != delimChar) { 
                     break;
                 }
                 delim += line[i];
             }
             line.erase(0,delim.length());
             size_t pos = 0;
+            string multiLine = line;
+            streampos orgPos = mdFile->tellg();
+            bool found = false;
+            string newLine = line;
             while (true) {
-                pos = line.find(delim);
-                if (pos != string::npos || mdFile->eof()) {
+                pos = newLine.find(delim);
+                if (pos != string::npos) {
+                    found = true;
+                    break;
+                } else if (mdFile->eof()) {
                     break;
                 } else {
-                    string newLine;
+                    string tmpLine;
                     getline(*mdFile, newLine);
-                    line += "\n";
-                    line += newLine;
+                    multiLine += "\n";
+                    multiLine += newLine;
                 }
             }
             node->type = 13;
-            node->body.push_back(line);
+            if (!found) {
+                mdFile->clear(); 
+                mdFile->seekg(orgPos);
+            } else {
+                node->body.push_back(multiLine);
+            }
             inlinesSuppressed = true;
+            line = delim + line;
+            return;
         }
 
         string rawBody = escHTML(line);
-        node->type = catalogTree[command];
+        if (node->type == -1) {
+            node->type = catalogTree[command];
+        }
 
-        if (inlinesSuppressed) {
+        if (inlinesSuppressed && node->type != 13) {
             //if this is an inline code, inlines are supressed and not formatted.
             //first lets remove any leading/trailing spaces
             if (rawBody[0] == ' ' && rawBody[rawBody.length()-1] == ' '){
@@ -328,6 +345,7 @@ int main() {
     catalogOut1[10] = "<code>";
     catalogOut1[11] = "<a>";
     catalogOut1[12] = "<img ";
+    catalogOut1[13] = "<pre><code>";
 
     catalogOut2[0] = "</h1>";
     catalogOut2[1] = "</h2>";
@@ -342,6 +360,7 @@ int main() {
     catalogOut2[10] = "</code>";
     catalogOut2[11] = "</a>";
     catalogOut2[12] = "/>";
+    catalogOut2[13] = "</code></pre>";
 
     catalogTree["#"] = 0;
     catalogTree["##"] = 1;

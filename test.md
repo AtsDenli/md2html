@@ -11,7 +11,9 @@ this s**hould work**
 this s__houldn't work__
 `this should work`
 ```this should also work```
-```this should NOT work``
 `` this **shouldnt** be bold ``
 [War Front Video](https://www.youtube.com/watch?v=fQ30xhabzFU "video title")
 ![Kurzgesagt](./image.png "kurzgesagt intro")
+``` this is line 1
+this is line 2 
+and line 3 ```
