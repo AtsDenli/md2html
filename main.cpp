@@ -116,7 +116,6 @@ bool parseLinkImg(string line, TreeNode *node) {
         node->body.push_back(splits[1]);
     }
     return true;
-    
 }
 
 void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
@@ -171,11 +170,11 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
         
     } else if ((line[0] == '*' || line[0] == '+' || line[0] == '-') && line[1] == ' ') {//unordered list
         node->type = 14;
-        string newLine;
-        while(getline(*mdFile, newLine)){
+        string newLine = line;
+        do {
             if (newLine == "") {
                 continue;
-            } else if ((line[0] == '*' || line[0] == '+' || line[0] == '-') && line[1] == ' ') {
+            } else if ((newLine[0] == '*' || newLine[0] == '+' || newLine[0] == '-') && newLine[1] == ' ') {
                 TreeNode* child = new TreeNode(16);
                 newLine.erase(0,2);
                 buildNode(newLine, child, linkAllow, mdFile);
@@ -183,14 +182,15 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
             } else {
                 break;
             }
-        }
+        } while (getline(*mdFile, newLine));
+        return;
     } else if (isInteger(ordListNum) && line[ordListNum.length()] == '.' && line[ordListNum.length()+1] == ' ') {//ordered list
         node->type = 15;
-        string newLine;
-        while(getline(*mdFile, newLine)){
+        string newLine = line;
+        do {
             if (newLine == "") {
                 continue;
-            } else if (isInteger(ordListNum) && line[ordListNum.length()] == '.' && line[ordListNum.length()+1] == ' ') {
+            } else if (isInteger(ordListNum) && newLine[ordListNum.length()] == '.' && newLine[ordListNum.length()+1] == ' ') {
                 TreeNode* child = new TreeNode(16);
                 newLine.erase(0, ordListNum.length()+2);
                 buildNode(newLine, child, linkAllow, mdFile);
@@ -198,7 +198,8 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
             } else {
                 break;
             }
-        }
+        } while (getline(*mdFile, newLine));
+        return;
     } else if (line[0] == '*' || line[0] == '_') {
         if (line[1] == line[0]) {
             command = string(1, line[0]) + string(1, line[1]);
@@ -326,15 +327,6 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
     }
 }
 
-void printTree(TreeNode *root) {
-    cout << root->type << endl;
-    for (TreeNode *child : root->children){
-        printTree(child);
-        cout << "| ";
-    } 
-    cout << endl;
-}
-
 void buildFile(TreeNode *root, ofstream &file, bool isLinkImg){
     if (root->type == 11) {
         file << catalogOut1[root->type][0] << catalogOut1[root->type][1] << "  href=\"" << root->body[0] << "\" ";
@@ -352,6 +344,11 @@ void buildFile(TreeNode *root, ofstream &file, bool isLinkImg){
             file << " title=\"" << root->body[1] << "\"";
         }
         file << catalogOut2[root->type] << endl;
+    } else if (root->type == 14 || root->type == 15) {
+        file << catalogOut1[root->type] << "\n\t";
+        for (TreeNode* child : root->children) {
+
+        }
     } else {
         if (!isLinkImg) {
             file << catalogOut1[root->type] << endl << "\t";

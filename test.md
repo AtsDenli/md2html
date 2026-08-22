@@ -17,3 +17,8 @@ this s__houldn't be bold__
 ``` this is line 1
 this is line 2 
 and line 3 ```
++ unordered element 1
+- unordered element 2
+this is a gap
+1. ordered element 1
+4. ordered element 2
