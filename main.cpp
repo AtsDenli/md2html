@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <cctype>
 using namespace std;
 
 //make a map to store the catalogue of conversions both for building the file and the tree
@@ -46,6 +47,13 @@ vector<string> split_string(const string& s, const string& delim) {
     }
     parts.push_back(s.substr(start));
     return parts;
+}
+
+bool isInteger(const string& s) {
+    // String must not be empty, and all characters must be digits
+    return !s.empty() && all_of(s.begin(), s.end(), [](unsigned char c) { 
+        return isdigit(c); 
+    });
 }
 
 string escHTML(string line) {
@@ -119,6 +127,7 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
     bool inlinesSuppressed = false;
     bool isLinkImg = false;
     string command;
+    string ordListNum = split_string(line, ".")[0];
     if (line == "****") {
         command = line;
         line = "";
@@ -175,8 +184,21 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
                 break;
             }
         }
-    } else if () {
-        
+    } else if (isInteger(ordListNum) && line[ordListNum.length()] == '.' && line[ordListNum.length()+1] == ' ') {//ordered list
+        node->type = 15;
+        string newLine;
+        while(getline(*mdFile, newLine)){
+            if (newLine == "") {
+                continue;
+            } else if (isInteger(ordListNum) && line[ordListNum.length()] == '.' && line[ordListNum.length()+1] == ' ') {
+                TreeNode* child = new TreeNode(16);
+                newLine.erase(0, ordListNum.length()+2);
+                buildNode(newLine, child, linkAllow, mdFile);
+                node->addChild(child);
+            } else {
+                break;
+            }
+        }
     } else if (line[0] == '*' || line[0] == '_') {
         if (line[1] == line[0]) {
             command = string(1, line[0]) + string(1, line[1]);
