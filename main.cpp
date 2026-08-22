@@ -160,6 +160,23 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
             inlinesSuppressed = false;
         }
         
+    } else if ((line[0] == '*' || line[0] == '+' || line[0] == '-') && line[1] == ' ') {//unordered list
+        node->type = 14;
+        string newLine;
+        while(getline(*mdFile, newLine)){
+            if (newLine == "") {
+                continue;
+            } else if ((line[0] == '*' || line[0] == '+' || line[0] == '-') && line[1] == ' ') {
+                TreeNode* child = new TreeNode(16);
+                newLine.erase(0,2);
+                buildNode(newLine, child, linkAllow, mdFile);
+                node->addChild(child);
+            } else {
+                break;
+            }
+        }
+    } else if () {
+        
     } else if (line[0] == '*' || line[0] == '_') {
         if (line[1] == line[0]) {
             command = string(1, line[0]) + string(1, line[1]);
@@ -347,6 +364,9 @@ int main() {
     catalogOut1[11] = "<a>";
     catalogOut1[12] = "<img ";
     catalogOut1[13] = "<pre><code>";
+    catalogOut1[14] = "<ul>";
+    catalogOut1[15] = "<ol>";
+    catalogOut1[16] = "<li>";
 
     catalogOut2[0] = "</h1>";
     catalogOut2[1] = "</h2>";
@@ -362,6 +382,9 @@ int main() {
     catalogOut2[11] = "</a>";
     catalogOut2[12] = "/>";
     catalogOut2[13] = "</code></pre>";
+    catalogOut2[14] = "</ul>";
+    catalogOut2[15] = "</ol>";
+    catalogOut2[16] = "</li>";
 
     catalogTree["#"] = 0;
     catalogTree["##"] = 1;
