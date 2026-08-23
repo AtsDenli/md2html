@@ -353,8 +353,9 @@ void buildFile(TreeNode *root, ofstream &file, bool isLinkImg){
     } else if (root->type == 14 || root->type == 15) {
         file << catalogOut1[root->type] << "\n\t";
         for (TreeNode* child : root->children) {
-
+            buildFile(child, file, false);
         }
+        file << catalogOut1[root->type] << "\n";
     } else {
         if (!isLinkImg) {
             file << catalogOut1[root->type] << endl << "\t";
