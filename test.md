@@ -3,12 +3,15 @@
 ###test3
 paragraph test
 ****
+****bold****
 this **is** _inline_ test
 this ** shouldnt be bold**
 this * shouldn't be italics*
 this **_is both_**
 this s**hould work**
 this s__houldn't be bold__
+__this is also bold__
+*this is italics*
 `this should work`
 ```this should also work```
 `` this **shouldnt** be bold ``
