@@ -171,6 +171,7 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
     } else if ((line[0] == '*' || line[0] == '+' || line[0] == '-') && line[1] == ' ') {//unordered list
         node->type = 14;
         string newLine = line;
+        streampos lastPos = mdFile->tellg();
         do {
             if (newLine == "") {
                 continue;
@@ -180,13 +181,16 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
                 buildNode(newLine, child, linkAllow, mdFile);
                 node->addChild(child);
             } else {
+                mdFile->seekg(lastPos);
                 break;
             }
+            lastPos = mdFile->tellg();
         } while (getline(*mdFile, newLine));
         return;
     } else if (isInteger(ordListNum) && line[ordListNum.length()] == '.' && line[ordListNum.length()+1] == ' ') {//ordered list
         node->type = 15;
         string newLine = line;
+        streampos lastPos = mdFile->tellg();
         do {
             if (newLine == "") {
                 continue;
@@ -196,8 +200,10 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
                 buildNode(newLine, child, linkAllow, mdFile);
                 node->addChild(child);
             } else {
+                mdFile->seekg(lastPos);
                 break;
             }
+            lastPos = mdFile->tellg();
         } while (getline(*mdFile, newLine));
         return;
     } else if (line[0] == '*' || line[0] == '_') {
