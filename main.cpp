@@ -17,7 +17,7 @@ class TreeNode {
         int type; // 0 = h1, 1 = h2, 2 = h3, 3 = h4, 4 = h5, 5 = h6, 6 = p, -1 = root
         vector<string> body;
         vector<TreeNode*> children;
-        TreeNode *parent = nullptr;
+
         TreeNode(int newtype) {
             type = newtype;
         }
@@ -87,11 +87,20 @@ bool parseLinkImg(string line, TreeNode *node) {
         i = 1;
     }
 
+    int openCount = 1;
+    int closeCount = 0;
     for (i; i < line.length(); i++) {
+        if (line[i] == ']'){
+            closeCount++;
+        } else if (line[i] == '[') {
+            openCount++;
+        }
         if (i != line.length()-1) {
-            if (line[i] == ']' && line[i+1] == '(') {
+            if (line[i] == ']' && line[i+1] == '(' && openCount == closeCount) {
                 noWhitespace = true;
                 break;
+            } else if (line[i] == ']' && line[i+1] == ' ' && closeCount == openCount) {
+                return false;
             }
         }
         linkText += line[i];
@@ -102,7 +111,6 @@ bool parseLinkImg(string line, TreeNode *node) {
     }
     //create node to add to tree
     TreeNode *child = new TreeNode(-1);
-    child->parent = node;
 
     //parse the link text
     buildNode(linkText, child, false, nullptr);
@@ -131,12 +139,15 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
         command = line;
         line = "";
     } else if (line[0] == '[' && linkAllow) {
-        //make a new function to identify and parse links
-        node->type = 11;
         isLinkImg = parseLinkImg(line, node);
+        if (isLinkImg) {
+            node->type = 11;
+        }
     } else if (line[0] == '!' && line[1] == '[' && linkAllow) {
-        node->type = 12;
         isLinkImg = parseLinkImg(line, node);
+        if(isLinkImg) {
+            node->type = 12;
+        }
     } else if (line[0] == '`') {
         inlinesSuppressed = true;
         int backTickCount = 0;
@@ -302,7 +313,6 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
                     node->body.push_back(bodyPart);
                     bodyPart = "";
                     TreeNode *child = new TreeNode(-1);
-                    child->parent = node;
 
                     size_t start = i + delim.length();
                     size_t end = rawBody.find(delim, start);
@@ -333,14 +343,14 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
     }
 }
 
-void buildFile(TreeNode *root, ofstream &file, bool isLinkImg){
+void buildFile(TreeNode *root, ofstream &file, bool isImg){
     if (root->type == 11) {
         file << catalogOut1[root->type][0] << catalogOut1[root->type][1] << "  href=\"" << root->body[0] << "\" ";
         if (root->body.size() > 1) {
             file << "title=\"" << root->body[1] << "\"";
         }
         file << ">" << endl << "\t";
-        buildFile(root->children[0], file, true);
+        buildFile(root->children[0], file, false);
         file << catalogOut2[root->type] << endl;
     } else if (root->type == 12) {
         file << catalogOut1[root->type] << " src=\"" << root->body[0] << "\" alt=\"";
@@ -357,7 +367,7 @@ void buildFile(TreeNode *root, ofstream &file, bool isLinkImg){
         }
         file << catalogOut1[root->type] << "\n";
     } else {
-        if (!isLinkImg) {
+        if (!isImg) {
             file << catalogOut1[root->type] << endl << "\t";
         }
         int i = 0;
@@ -368,7 +378,7 @@ void buildFile(TreeNode *root, ofstream &file, bool isLinkImg){
             }
             i++;
         }
-        if (!isLinkImg) {
+        if (!isImg) {
             file << catalogOut2[root->type] << endl;
         }
     }
@@ -443,7 +453,6 @@ int main() {
     string body;
     while (getline(mdFile, buf)) {
         TreeNode *tmp = new TreeNode(-1);
-        tmp -> parent = &treeRoot;
         buildNode(buf, tmp, true, &mdFile);
         treeRoot.addChild(tmp);
     }
