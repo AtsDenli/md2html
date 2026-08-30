@@ -1,5 +1,9 @@
-[[War Front Video](https://www.youtube.com/watch?v=fQ30xhabzFU "video title")](https://www.youtube.com/watch?v=fQ30xhabzFU "video title")
-![![Kurzgesagt](./image.png "kurzgesagt intro")](./image.png "kurzgesagt intro")
-[**brain.fm**](https://my.brain.fm/player/QYN78dJrrzs5mD_TJgBcq "adhd music")
-[**brain.fm**] (https://my.brain.fm/player/QYN78dJrrzs5mD_TJgBcq "adhd music")
-![**Kurzgesagt**](./image.png "kurzgesagt intro")
++ ulist1
+- ulist2
+* ulist3
+
+this is a paragraph
+2. first member
+3. second memeber
++ mixing things up
+4. whathappens here?

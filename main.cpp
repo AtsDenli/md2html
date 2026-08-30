@@ -242,7 +242,7 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
     }
 
     if (!isLinkImg) {
-        if (command == "" && !inlinesSuppressed && (count(line.begin(), line.begin()+3, '`') == 3) || (count(line.begin(), line.begin()+3, '~') == 3)) {
+        if (command == "" && !inlinesSuppressed && line.length() >= 3 && (count(line.begin(), line.begin()+3, '`') == 3 || count(line.begin(), line.begin()+3, '~') == 3)) {
             char delimChar = line[0];
             string delim = "";
             for (int i = 0; i < line.length(); i++) {
@@ -271,17 +271,18 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
                     multiLine += newLine;
                 }
             }
-            node->type = 13;
+            
             if (!found) {
                 mdFile->clear(); 
                 mdFile->seekg(orgPos);
+                line = delim + line;
             } else {
+                node->type = 13;
                 multiLine.erase(multiLine.end() - delim.length(), multiLine.end());
                 node->body.push_back(multiLine);
+                inlinesSuppressed = true;
+                return;
             }
-            inlinesSuppressed = true;
-            line = delim + line;
-            return;
         }
 
         string rawBody = escHTML(line);
