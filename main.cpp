@@ -29,6 +29,20 @@ class TreeNode {
 
 void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile);
 
+bool lineGetter(ifstream &file, string *buffer) {
+    string line;
+    if (getline(file, line)){
+        if (line != ""){
+            if (line[line.length()-1] == '\r') {
+                line.erase(line.length()-1, 1);
+            }
+            *buffer = line;
+            return true;
+        }
+    }
+    return false;
+}
+
 vector<string> split_string(const string& s, const string& delim) {
     vector<string> parts;
     size_t start = 0;
@@ -115,7 +129,7 @@ bool parseLinkImg(string line, TreeNode *node) {
     //parse the link text
     buildNode(linkText, child, false, nullptr);
     node->addChild(child);
-    string destiTitle = split_string(line, "(")[1];
+    string destiTitle = split_string(line, "](")[1];
     destiTitle.erase(destiTitle.length()-1, 1);
 
     vector<string> splits = split_string(destiTitle, "\"");
@@ -138,12 +152,12 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
     if (line == "****") {
         command = line;
         line = "";
-    } else if (line[0] == '[' && linkAllow) {
+    } else if (line.length() >= 1 && line[0] == '[' && linkAllow) {
         isLinkImg = parseLinkImg(line, node);
         if (isLinkImg) {
             node->type = 11;
         }
-    } else if (line[0] == '!' && line[1] == '[' && linkAllow) {
+    } else if ((line.length() >= 2 && line[0] == '!' && line[1] == '[' && linkAllow)) {
         isLinkImg = parseLinkImg(line, node);
         if(isLinkImg) {
             node->type = 12;
@@ -171,22 +185,28 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
 
         if (backTickCheck == backTickCount) {
             command = '`';
-            line.erase(0, backTickCount);
-            line.erase(line.length()-backTickCount, backTickCount);
+            if (backTickCount <= line.length()/2) {
+                line.erase(0, backTickCount);
+                line.erase(line.length()-backTickCount, backTickCount);
+            } else {
+                //the whole line is backticks
+                line = "";
+            }
+            
         } else {
             //not the same number of bacticks before and after - its a paragraph instead
             command = "";
             inlinesSuppressed = false;
         }
         
-    } else if ((line[0] == '*' || line[0] == '+' || line[0] == '-') && line[1] == ' ') {//unordered list
+    } else if ((line.length() >= 2 && (line[0] == '*' || line[0] == '+' || line[0] == '-') && line[1] == ' ')) {//unordered list
         node->type = 14;
         string newLine = line;
         streampos lastPos = mdFile->tellg();
         do {
             if (newLine == "") {
                 continue;
-            } else if ((newLine[0] == '*' || newLine[0] == '+' || newLine[0] == '-') && newLine[1] == ' ') {
+            } else if ((newLine.length() >= 2 && (newLine[0] == '*' || newLine[0] == '+' || newLine[0] == '-') && newLine[1] == ' ')) {
                 TreeNode* child = new TreeNode(16);
                 newLine.erase(0,2);
                 buildNode(newLine, child, linkAllow, mdFile);
@@ -196,16 +216,16 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
                 break;
             }
             lastPos = mdFile->tellg();
-        } while (getline(*mdFile, newLine));
+        } while (lineGetter(*mdFile, &newLine));
         return;
-    } else if (isInteger(ordListNum) && line[ordListNum.length()] == '.' && line[ordListNum.length()+1] == ' ') {//ordered list
+    } else if (isInteger(ordListNum) && line.length() > ordListNum.length() + 1 && line[ordListNum.length()] == '.' && line[ordListNum.length()+1] == ' ') {//ordered list
         node->type = 15;
         string newLine = line;
         streampos lastPos = mdFile->tellg();
         do {
             if (newLine == "") {
                 continue;
-            } else if (isInteger(ordListNum) && newLine[ordListNum.length()] == '.' && newLine[ordListNum.length()+1] == ' ') {
+            } else if (isInteger(ordListNum) && newLine.length() > ordListNum.length() + 1 && newLine[ordListNum.length()] == '.' && newLine[ordListNum.length()+1] == ' ') {
                 TreeNode* child = new TreeNode(16);
                 newLine.erase(0, ordListNum.length()+2);
                 buildNode(newLine, child, linkAllow, mdFile);
@@ -215,14 +235,14 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
                 break;
             }
             lastPos = mdFile->tellg();
-        } while (getline(*mdFile, newLine));
+        } while (lineGetter(*mdFile, &newLine));
         return;
-    } else if (line[0] == '*' || line[0] == '_') {
-        if (line[1] == line[0]) {
+    } else if ((line[0] == '*' || line[0] == '_') && line.length() > 1) {
+        if ((line[1] == line[0]) && line[0] == line[line.length()-1] && line[0] == line[line.length()-2] && line.length() >= 4) {
             command = string(1, line[0]) + string(1, line[1]);
             line.erase(0,2);
             line.erase(line.length()-2, 2);
-        } else {
+        } else if (line[0] == line[line.length()-1]) {
             command = string(1, line[0]);
             line.erase(0,1);
             line.erase(line.length()-1, 1);
@@ -266,7 +286,7 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
                     break;
                 } else {
                     string tmpLine;
-                    getline(*mdFile, newLine);
+                    lineGetter(*mdFile, &newLine);
                     multiLine += "\n";
                     multiLine += newLine;
                 }
@@ -366,7 +386,7 @@ void buildFile(TreeNode *root, ofstream &file, bool isImg){
         for (TreeNode* child : root->children) {
             buildFile(child, file, false);
         }
-        file << catalogOut1[root->type] << "\n";
+        file << catalogOut2[root->type] << "\n";
     } else {
         if (!isImg) {
             file << catalogOut1[root->type] << endl << "\t";
@@ -443,7 +463,7 @@ int main() {
     cin >> input;
 
     ifstream mdFile;
-    mdFile.open(input);
+    mdFile.open(input, ios::binary);
     if (!mdFile.is_open()){
         cerr << "There was an error opening this file. Check if this file exists at this location";
         return 1;
@@ -452,7 +472,7 @@ int main() {
     TreeNode treeRoot(-1);
     string buf;
     string body;
-    while (getline(mdFile, buf)) {
+    while (lineGetter(mdFile, &buf)) {
         TreeNode *tmp = new TreeNode(-1);
         buildNode(buf, tmp, true, &mdFile);
         treeRoot.addChild(tmp);
