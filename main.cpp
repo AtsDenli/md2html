@@ -29,20 +29,6 @@ class TreeNode {
 
 void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile);
 
-bool lineGetter(ifstream &file, string *buffer) {
-    string line;
-    if (getline(file, line)){
-        if (line != ""){
-            if (line[line.length()-1] == '\r') {
-                line.erase(line.length()-1, 1);
-            }
-            *buffer = line;
-            return true;
-        }
-    }
-    return false;
-}
-
 vector<string> split_string(const string& s, const string& delim) {
     vector<string> parts;
     size_t start = 0;
@@ -88,6 +74,20 @@ string escHTML(string line) {
         }
     }
     return escapedLine;
+}
+
+bool lineGetter(ifstream &file, string *buffer) {
+    string line;
+    if (getline(file, line)){
+        if (line != ""){
+            if (line[line.length()-1] == '\r') {
+                line.erase(line.length()-1, 1);
+            }
+            *buffer = escHTML(line);
+            return true;
+        }
+    }
+    return false;
 }
 
 bool parseLinkImg(string line, TreeNode *node) {
@@ -147,6 +147,7 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
     }
     bool inlinesSuppressed = false;
     bool isLinkImg = false;
+    bool isInlineCode = false;
     string command;
     string ordListNum = split_string(line, ".")[0];
     if (line == "****") {
@@ -188,11 +189,8 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
             if (backTickCount <= line.length()/2) {
                 line.erase(0, backTickCount);
                 line.erase(line.length()-backTickCount, backTickCount);
-            } else {
-                //the whole line is backticks
-                line = "";
-            }
-            
+                isInlineCode = true;
+            }            
         } else {
             //not the same number of bacticks before and after - its a paragraph instead
             command = "";
@@ -262,7 +260,7 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
     }
 
     if (!isLinkImg) {
-        if (command == "" && !inlinesSuppressed && line.length() >= 3 && (count(line.begin(), line.begin()+3, '`') == 3 || count(line.begin(), line.begin()+3, '~') == 3)) {
+        if ((((command == "" && !inlinesSuppressed) || (inlinesSuppressed)) && line.length() >= 3 && (count(line.begin(), line.begin()+3, '`') == 3 || count(line.begin(), line.begin()+3, '~') == 3))) {
             char delimChar = line[0];
             string delim = "";
             for (int i = 0; i < line.length(); i++) {
@@ -305,9 +303,12 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
             }
         }
 
-        string rawBody = escHTML(line);
+        string rawBody = line;
         if (node->type == -1) {
             node->type = catalogTree[command];
+            if (node->type <= 5 && line[0] != ' ') {
+                node->type = 6;
+            }
         }
 
         if (inlinesSuppressed && node->type != 13) {
@@ -324,10 +325,12 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
         string bodyPart = "";
         for (int i = 0; i < rawBody.length(); i++) {
             bool isDoubled = ((rawBody[i] == '*'  || rawBody[i] == '_') && rawBody[i+1] == rawBody[i]);
-            if (((rawBody[i] == '*'  || rawBody[i] == '_') && rawBody[i+1] != ' ' && !isDoubled) || (isDoubled && rawBody[i+2] != ' ')) { //valid delimiter
+            if (((rawBody[i] == '*'  || rawBody[i] == '_') && rawBody[i+1] != ' ' && !isDoubled) || (isDoubled && rawBody[i+2] != ' ') || rawBody[i] == '`') { //valid delimiter
                 string delim = string(1, rawBody[i]);
-                if (rawBody[i] == rawBody[i+1] && i <= rawBody.length()) {
+                int n = 1;
+                while (rawBody[i] == rawBody[i+n] && i <= rawBody.length()) {
                     delim += string(1, rawBody[i+1]);
+                    n++;
                 } 
 
                 if (rawBody.find(delim, i+1) != string::npos){ //making sure this isnt the last delimiter in the line without a pair - edge case
@@ -346,6 +349,14 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
                     }
 
                     node->addChild(child);
+                    if (delim[0] == '`') {
+                        if (line[0] == ' '){
+                            line.erase(0,1);
+                        }
+                        if (line.back() == ' '){
+                            line.erase(line.length()-1, 1);
+                        }
+                    }
                     buildNode(childBody, child, true, mdFile);
                     i += childBody.length() - 1;
                 } else {
@@ -458,9 +469,9 @@ int main() {
     catalogTree["`"] = 10; //inline code
 
     //first we need input from the user - im not bothered to build CLI so just gonna use simple text IO
-    cout << "Input the target markdown file \n";
+    std::cout << "Input the target markdown file \n";
     string input;
-    cin >> input;
+    std::cin >> input;
 
     ifstream mdFile;
     mdFile.open(input, ios::binary);
