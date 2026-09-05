@@ -83,9 +83,9 @@ bool lineGetter(ifstream &file, string *buffer) {
             if (line[line.length()-1] == '\r') {
                 line.erase(line.length()-1, 1);
             }
-            *buffer = escHTML(line);
-            return true;
         }
+        *buffer = escHTML(line);
+        return true;
     }
     return false;
 }
