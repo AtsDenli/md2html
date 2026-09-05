@@ -184,7 +184,7 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
             }
         } 
 
-        if (backTickCheck == backTickCount) {
+        if (backTickCheck == backTickCount && backTickCount < line.length()) {
             command = '`';
             if (backTickCount <= line.length()/2) {
                 line.erase(0, backTickCount);
@@ -254,8 +254,15 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
         }    
         command.erase(remove_if(command.begin(), command.end(), [](char c) { return c != '#' ; }), command.end());
         if (command != "") {
-            size_t pos = line.find(command);
-            line.erase(pos, command.length());
+            if (line.length() > command.length() && line[command.length()] == ' ') {
+                node->type = catalogTree[command];
+                line.erase(0, command.length());
+                if (!line.empty()) {
+                    line.erase(0, 1); // remove the space after the hashes
+                }
+            } else {
+                node->type = 6;        
+            }
         }
     }
 
@@ -306,9 +313,6 @@ void buildNode(string line, TreeNode *node, bool linkAllow, ifstream *mdFile){
         string rawBody = line;
         if (node->type == -1) {
             node->type = catalogTree[command];
-            if (node->type <= 5 && line[0] != ' ') {
-                node->type = 6;
-            }
         }
 
         if (inlinesSuppressed && node->type != 13) {
